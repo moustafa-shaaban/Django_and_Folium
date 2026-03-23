@@ -5,6 +5,7 @@ from django.shortcuts import render
 from django.views import generic
 from django.http import HttpResponse
 from django.contrib import messages
+from django.utils.html import escape
 
 from tablib import Dataset
 
@@ -18,34 +19,33 @@ class HomePage(generic.TemplateView):
 
 
 def index(request):
-
     # Create folium basemap
-    map = folium.Map(
+    folium_map = folium.Map(
         location=[47.6062100, -122.3320700],
         tiles='cartodbpositron',
         zoom_start=11,
-        attr= 'Public Schools in Seattle'
+        attr= 'Private Schoolss in Seattle'
     )
 
     # Add a second TileLayer to the basemap
-    folium.TileLayer('cartodbdark_matter').add_to(map)
+    folium.TileLayer('cartodbdark_matter').add_to(folium_map)
 
 
     # Add Schools Data
     schools = School.objects.all()
 
-    schools_simple_markers = folium.FeatureGroup(name='Schools Simple Markers').add_to(map)
+    schools_simple_markers = folium.FeatureGroup(name='Schools Simple Markers').add_to(folium_map)
 
     for school in schools:
         locations = [school.latitude, school.longitude]
         folium.Marker(
             locations,
             icon=folium.Icon(icon = "graduation-cap", prefix='fa'),
-            tooltip="School Name: " + str(school.name),
-            popup="School Address :" + school.address,
+            tooltip="School Name: " + escape(school.name),
+            popup="School Address :" + escape(school.address),
     ).add_to(schools_simple_markers)
 
-    schools_marker_cluster = folium.FeatureGroup(name='Schools Marker Cluster', show=False).add_to(map)
+    schools_marker_cluster = folium.FeatureGroup(name='Schools Marker Cluster', show=False).add_to(folium_map)
 
     marker_cluster = MarkerCluster()
 
@@ -55,8 +55,8 @@ def index(request):
             folium.Marker(
                 locations,
                 icon=folium.Icon(icon = "graduation-cap", prefix='fa'),
-                tooltip="School Name: " + str(school.name),
-                popup="School Address :" + school.address,
+                tooltip="School Name: " + escape(school.name),
+                popup="School Address :" + escape(school.address),
             )
         ).add_to(schools_marker_cluster)
 
@@ -65,18 +65,18 @@ def index(request):
     # Add Libraries data:
     libraries = Library.objects.all()
 
-    libraries_simple_markers = folium.FeatureGroup(name='Libraries Simple Markers', show=False).add_to(map)
+    libraries_simple_markers = folium.FeatureGroup(name='Libraries Simple Markers', show=False).add_to(folium_map)
 
     for library in libraries:
         locations = [library.latitude, library.longitude]
         folium.Marker(
             locations,
             icon=folium.Icon(icon = "book", prefix='fa'),
-            tooltip="Library Name: " + str(library.name),
-            popup="Library Address :" + library.address,
+            tooltip="Library Name: " + escape(library.name),
+            popup="Library Address :" + escape(library.address),
         ).add_to(libraries_simple_markers)
 
-    libraries_marker_cluster = folium.FeatureGroup(name='Libraries Marker Cluster', show=False).add_to(map)
+    libraries_marker_cluster = folium.FeatureGroup(name='Libraries Marker Cluster', show=False).add_to(folium_map)
 
     marker_cluster = MarkerCluster()
 
@@ -86,8 +86,8 @@ def index(request):
             folium.Marker(
                 locations,
                 icon=folium.Icon(icon = "book", prefix='fa'),
-                tooltip="Library Name: " + str(library.name),
-                popup="Library Address :" + library.address,
+                tooltip="Library Name: " + escape(library.name),
+                popup="Library Address :" + escape(library.address),
             )
         ).add_to(libraries_marker_cluster)
 
@@ -96,18 +96,18 @@ def index(request):
     # Add Hospitals data
     hospitals = Hospital.objects.all()
 
-    hospitals_simple_markers = folium.FeatureGroup(name='Hospitals Simple Markers', show=False).add_to(map)
+    hospitals_simple_markers = folium.FeatureGroup(name='Hospitals Simple Markers', show=False).add_to(folium_map)
 
     for hospital in hospitals:
         locations = [hospital.latitude, hospital.longitude]
         folium.Marker(
             locations,
             icon=folium.Icon(icon_color = "red", icon = "h-square", prefix='fa'),
-            tooltip="Hospital Name: " + str(hospital.facility),
-            popup="Hospital Address :" + hospital.address,
+            tooltip="Hospital Name: " + escape(hospital.facility),
+            popup="Hospital Address :" + escape(hospital.address),
         ).add_to(hospitals_simple_markers)
 
-    hospitals_marker_cluster = folium.FeatureGroup(name='Hospitals Marker Cluster', show=False).add_to(map)
+    hospitals_marker_cluster = folium.FeatureGroup(name='Hospitals Marker Cluster', show=False).add_to(folium_map)
 
     marker_cluster = MarkerCluster()
 
@@ -117,28 +117,29 @@ def index(request):
             folium.Marker(
                 locations,
                 icon=folium.Icon(icon_color = "red", icon = "h-square", prefix='fa'),
-                tooltip="Hospital Name: " + str(hospital.facility),
-                popup="Hospital Address :" + hospital.address,
+                tooltip="Hospital Name: " + escape(hospital.facility),
+                popup="Hospital Address :" + escape(hospital.address),
             )
         ).add_to(hospitals_marker_cluster)
     ##################################################################################################
 
-    folium.LayerControl(position='bottomright').add_to(map)
-    Fullscreen().add_to(map)
-    LocateControl().add_to(map)
-    Geocoder().add_to(map)
-    folium.LatLngPopup().add_to(map)
+    folium.LayerControl(position='topright').add_to(folium_map)
+    Fullscreen().add_to(folium_map)
+    LocateControl().add_to(folium_map)
+    Geocoder().add_to(folium_map)
+    folium.LatLngPopup().add_to(folium_map)
 
-    map = map._repr_html_()
+    folium_map.get_root().height = "100%"
+
+    map_context = folium_map._repr_html_()
 
     context = {
-        'map': map
+        'map': map_context
     }
 
     return render(request, 'map.html', context)
 
 ########################################################################################################
-
 
 def import_hospitals_data(request):
     if request.method == 'POST':
